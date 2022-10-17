@@ -111,6 +111,7 @@ class ThreadVerificacaoPasta extends Thread {
     }
 
     public static void listaArquivosDaPasta(final File pasta, ArrayList<String> arquivos_peer) {
+        // Função para armazenar todos os arquivos da pasta em uma ArrayList
         ArrayList<String> arquivos_do_peer = new ArrayList<String>();
 
         for (final File arquivo : pasta.listFiles()) {
@@ -170,8 +171,8 @@ class ThreadProcuraArquivo extends Thread {
         if(!arquivos_ja_procurados.containsKey(msgBuscada.getUUIDRequisicao())) {
             arquivos_ja_procurados.put(msgBuscada.getUUIDRequisicao(), msgBuscada.getNomeArquivoProcurado());
 
-            // Checa se o peer atual contém o arquivo
             if(arquivos_peer_atual.contains(msgBuscada.getNomeArquivoProcurado()) && msgBuscada.getTTLReq() > 0) {
+                // Caso o peer atual tenha o arquivo, irá gerar uma mensagem RESPONSE para o peer solicitante
                 System.out.println(
                         "tenho " +
                         msgBuscada.getNomeArquivoProcurado() +
@@ -189,6 +190,7 @@ class ThreadProcuraArquivo extends Thread {
                     serverSocket.send(sendPacket);
                 } catch (Exception e) {}
             } else if (msgBuscada.getTTLReq() > 0) {
+                // Caso que o Peer não tem o arquivo buscado manda a busca para um próximo Peer caso o TTL da mensagem ainda seja maior que 0
                 String proximoHostEPorta = (Math.random() <= 0.5) ?
                         (hostPeerRelacionado1.getHostAddress() + ":" + port_peer_relacionado1) :
                         (hostPeerRelacionado2.getHostAddress() + ":" + port_peer_relacionado2);
@@ -208,7 +210,7 @@ class ThreadProcuraArquivo extends Thread {
                     serverSocket.send(sendPacket);
                 } catch (Exception e) {}
             } else {
-                System.out.println("ninguém no sistema possui o arquivo " + msgBuscada.getNomeArquivoProcurado());
+                // CASO EM QUE O TTL DA MENSAGEM CHEGOU EM ZERO RESPONDE AO HOST SOLICITANTE COM UM TIMEOUT
                 msgBuscada.setTipo_mensagem("TIMEOUT");
                 DatagramPacket sendPacket = new DatagramPacket(
                         msgBuscada.toString().getBytes(StandardCharsets.UTF_8),
@@ -226,6 +228,7 @@ class ThreadProcuraArquivo extends Thread {
 }
 
 class ThreadListenSocket extends Thread {
+    // Thread para ficar ouvindo o socket e enviar os pacotes recebidos para tratamento
     private DatagramSocket socket;
     byte[] recBuffer;
     private DatagramPacket recPkt;
@@ -241,15 +244,16 @@ class ThreadListenSocket extends Thread {
 
                 recBuffer = new byte[40960];
                 recPkt = new DatagramPacket(recBuffer, recBuffer.length);
-                socket.receive(recPkt); //bloqueante
+                socket.receive(recPkt); // Recebe a requisição
 
                 // Thread para tratamento do package recebido
                 ThreadTratamentoRecebido threadTratamentoRecebido = new ThreadTratamentoRecebido(recPkt);
                 threadTratamentoRecebido.start();
             }
         } catch (Exception e) {
-            //ThreadListenSocket repeatThread = new ThreadListenSocket(this.socket);
-            //repeatThread.start();
+            // Caso aconteça algo com a thread que fica ouvindo o socket, outra é criada.
+            ThreadListenSocket repeatThread = new ThreadListenSocket(this.socket);
+            repeatThread.start();
         }
     }
 }
@@ -258,6 +262,7 @@ class ThreadTratamentoRecebido extends Thread{
     private DatagramPacket packageRecebido;
     private Mensagem mensagemRecebida;
 
+    // Recebe um pacote com a classe Mensagem passada para String
     public ThreadTratamentoRecebido(DatagramPacket packet) {
         this.packageRecebido = packet;
     }
@@ -274,6 +279,7 @@ class ThreadTratamentoRecebido extends Thread{
            this.mensagemRecebida = new Mensagem(informacao);
         } catch (Exception e) { e.printStackTrace(); }
 
+        // De acordo com o tipo da Mensagem recebida, enderaça para outra thread de busca ou armazena a resposta recebida
         if (mensagemRecebida.getTipo_mensagem().equals("SEARCH")) {
             ThreadProcuraArquivo procuraArquivo = new ThreadProcuraArquivo(mensagemRecebida);
             procuraArquivo.start();
@@ -290,6 +296,7 @@ class ThreadTratamentoRecebido extends Thread{
 class ThreadTimeoutPorTempo extends Thread {
     private Mensagem msgArquivoBuscado;
 
+    // Classe gerada para criar um timeout por tempo caso a busca não atinja o TTL minímo.
     public ThreadTimeoutPorTempo(Mensagem msgBusca) {
         this.msgArquivoBuscado = msgBusca;
     }

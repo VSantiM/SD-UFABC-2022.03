@@ -22,7 +22,7 @@ public class Mensagem {
     }
 
     public Mensagem(String informacao) throws UnknownHostException {
-        //Parser
+        //Parser, a classe toString de Mensagem gerá a String no formato de ATRIBUTO:[VALOR_ATRIBUTO]-
         this.tipo_mensagem = informacao.substring(informacao.indexOf("TIPO:[") + 6, informacao.indexOf("]", informacao.indexOf("TIPO:[") + 1));
         this.nomeArquivoProcurado = informacao.substring(informacao.indexOf("NOME_ARQ:[") + 10, informacao.indexOf("]", informacao.indexOf("NOME_ARQ:[") + 1));
         this.UUIDRequisicao = UUID.fromString(informacao.substring(informacao.indexOf("UUID_REQ:[") + 10, informacao.indexOf("]", informacao.indexOf("UUID_REQ:[") + 1)));
@@ -61,6 +61,7 @@ public class Mensagem {
     }
 
     @Override
+    // a classe toString de Mensagem gerá a String no formato de ATRIBUTO:[VALOR_ATRIBUTO]-
     public String toString() {
         return ("TIPO:[" + this.tipo_mensagem + "]-" +
                 "HOST_REQ:[" + this.IPHostOrigem + "]-" +
